@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Writing an application &mdash; molly v0.3 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="molly v0.3 documentation" href="../index.html" />
+    <link rel="up" title="Implementation topics" href="index.html" />
+    <link rel="next" title="Explaining Molly’s class-based views" href="class_based_views.html" />
+    <link rel="prev" title="The Application framework" href="application_framework.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="class_based_views.html" title="Explaining Molly’s class-based views"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="application_framework.html" title="The Application framework"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">molly v0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Implementation topics</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="writing-an-application">
+<h1>Writing an application<a class="headerlink" href="#writing-an-application" title="Permalink to this headline">¶</a></h1>
+<p>A Molly application is a Python package with a certain layout.</p>
+<p>Normally, you&#8217;ll see:</p>
+<div class="highlight-none"><div class="highlight"><pre>myapp/
+├ templates/
+│   └ myapp/
+│       ├ base.html
+│       ├ index.html
+│       └ [...]
+├ templatetags/
+│   ├ __init__.py
+│   └ myapp.py
+├ __init__.py
+├ admin.py
+├ forms.py
+├ models.py
+├ providers.py
+├ urls.py
+└ views.py
+</pre></div>
+</div>
+<p>Most of these follow the Django conventions, so if you&#8217;re unfamiliar you
+should consult the Django documentation.</p>
+<div class="section" id="the-flow-of-a-request">
+<h2>The flow of a request<a class="headerlink" href="#the-flow-of-a-request" title="Permalink to this headline">¶</a></h2>
+<p>Django despatches an incoming request to the callback given in a urlconf
+which, in Molly, is a class object. Calling a class object is mapped to
+calling it&#8217;s <tt class="docutils literal"><span class="pre">__new__</span></tt> method. Ordinarily, this returns an instance of that
+class, but in Molly it returns the response. Specifically:</p>
+<dl class="class">
+<dt id="FooView">
+<em class="property">class </em><tt class="descname">FooView</tt><a class="headerlink" href="#FooView" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt>
+<tt class="descname">__new__(request, *args, **kwargs):</tt></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>request</em> (<tt class="xref docutils literal"><span class="pre">HttpRequest</span></tt>) &#8211; The request from the client to be processed.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">HttpResponse</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p>Unless overridden, the method called is
+<tt class="xref docutils literal"><span class="pre">molly.utils.views.BaseView.__new__()</span></tt>. This performs the following steps:</p>
+<blockquote>
+<ul class="simple">
+<li>Checks there is a handler available for the HTTP method specified. If not,
+it immediately returns a <tt class="docutils literal"><span class="pre">405</span> <span class="pre">Method</span> <span class="pre">Not</span> <span class="pre">Acceptable</span></tt> response.</li>
+<li>Calls <tt class="docutils literal"><span class="pre">cls.initial_context(request,</span> <span class="pre">*args,</span> <span class="pre">**kwargs)</span></tt>, which can provide
+context for all method handlers. A developer can use this to factor out
+code common between each of the handlers.</li>
+<li>Evaluates the breadcrumbs and adds the resulting information to the
+context.</li>
+<li>Calls the relevent handler, the name of which is determined by appending
+the method name to <tt class="docutils literal"><span class="pre">handle_</span></tt>, e.g. <tt class="docutils literal"><span class="pre">handle_GET</span></tt>. The handler is passed
+the request, context and any positional and keyword arguments.</li>
+<li>The handler will update the context and perform any required actions as
+necessary.</li>
+<li>The handler will generally return a <tt class="xref docutils literal"><span class="pre">HttpResponse</span></tt>
+subclass directly, or call the <tt class="xref docutils literal"><span class="pre">render()</span></tt>
+method on <tt class="xref docutils literal"><span class="pre">BaseView</span></tt>.</li>
+<li>In the latter case, <tt class="xref docutils literal"><span class="pre">render()</span></tt> will
+determine which format to serialize to using a <tt class="docutils literal"><span class="pre">format</span></tt> query parameter
+or content negotiation, and despatch to a format-specific rendering method
+(e.g. <tt class="xref docutils literal"><span class="pre">render_html()</span></tt>).</li>
+<li>The renderer will return a <tt class="xref docutils literal"><span class="pre">HttpResponse</span></tt> object, which
+will then be passed back up the callstack to Django to be sent back to the
+client.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="views">
+<h2>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h2>
+<p>Molly uses class-based views to provide greater extensibility than
+function-based views.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">More information about Molly&#8217;s use of class-based views can be found
+<a class="reference external" href="class_based_views.html"><em>here</em></a>.</p>
+</div>
+<p>A basic view looks a little like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseForbidden</span>
+
+<span class="kn">from</span> <span class="nn">molly.utils.views</span> <span class="kn">import</span> <span class="n">BaseView</span>
+<span class="kn">from</span> <span class="nn">molly.utils.breadcrumbs</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">molly.http</span> <span class="kn">import</span> <span class="n">HttpResponseSeeOther</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Thing</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">ThingUpdateForm</span>
+
+<span class="k">class</span> <span class="nc">ThingDetailView</span><span class="p">(</span><span class="n">BaseView</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">):</span>
+        <span class="n">thing</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Thing</span><span class="p">,</span> <span class="nb">id</span> <span class="o">=</span> <span class="n">thing_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s">&#39;title&#39;</span><span class="p">:</span> <span class="n">thing</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s">&#39;additional&#39;</span><span class="p">:</span> <span class="s">&#39;A </span><span class="si">%s</span><span class="s"> thing with a </span><span class="si">%s</span><span class="s"> leg.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thing</span><span class="o">.</span><span class="n">colour</span><span class="p">,</span> <span class="n">thing</span><span class="o">.</span><span class="n">leg_type</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="nd">@BreadcrumbFactory</span>
+    <span class="k">def</span> <span class="nf">breadcrumb</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Breadcrumb</span><span class="p">(</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">local_name</span><span class="p">,</span>
+            <span class="n">lazy_parent</span><span class="p">(</span><span class="s">&#39;things:index&#39;</span><span class="p">),</span>
+            <span class="n">thing</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">lazy_reverse</span><span class="p">(</span><span class="s">&#39;things:detail&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">thing_id</span><span class="p">]),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">initial_context</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">):</span>
+        <span class="n">thing</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Thing</span><span class="p">,</span> <span class="nb">id</span> <span class="o">=</span> <span class="n">thing_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s">&#39;thing&#39;</span><span class="p">:</span> <span class="n">thing</span><span class="p">,</span>
+            <span class="s">&#39;form&#39;</span><span class="p">:</span> <span class="n">ThingUpdateForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span> <span class="ow">or</span> <span class="bp">None</span><span class="p">,</span> <span class="n">instance</span> <span class="o">=</span> <span class="n">thing</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">handle_GET</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="s">&#39;things/thing_detail&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handle_POST</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">conf</span><span class="p">,</span> <span class="s">&#39;allow_edits&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">HttpResponseForbidden</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">context</span><span class="p">[</span><span class="s">&#39;form&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">context</span><span class="p">[</span><span class="s">&#39;form&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">HttpResponseSeeOther</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s">&#39;things:detail&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">handle_GET</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For a &#8216;basic&#8217; view, there&#8217;s quite a lot going on here. Be [TODO]</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Writing an application</a><ul>
+<li><a class="reference external" href="#the-flow-of-a-request">The flow of a request</a></li>
+<li><a class="reference external" href="#views">Views</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="application_framework.html"
+                                  title="previous chapter">The Application framework</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="class_based_views.html"
+                                  title="next chapter">Explaining Molly&#8217;s class-based views</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/topics/writing_an_application.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="class_based_views.html" title="Explaining Molly’s class-based views"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="application_framework.html" title="The Application framework"
+             >previous</a> |</li>
+        <li><a href="../index.html">molly v0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Implementation topics</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Molly Project and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.6.
+    </div>
+  </body>
+</html>

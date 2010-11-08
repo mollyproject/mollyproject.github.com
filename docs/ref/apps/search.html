@@ -1,0 +1,273 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>molly.apps.search – Whole site search &mdash; molly v0.3 documentation</title>
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.3',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="molly v0.3 documentation" href="../../index.html" />
+    <link rel="up" title="Provided applications" href="index.html" />
+    <link rel="next" title="molly.apps.service_status – Service status" href="service_status.html" />
+    <link rel="prev" title="molly.apps.contact – Contact search" href="contact.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="service_status.html" title="molly.apps.service_status – Service status"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="contact.html" title="molly.apps.contact – Contact search"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">molly v0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Provided applications</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-molly.apps.search">
+<h1><tt class="xref docutils literal"><span class="pre">molly.apps.search</span></tt> &#8211; Whole site search<a class="headerlink" href="#module-molly.apps.search" title="Permalink to this headline">¶</a></h1>
+<p>The search application allows the user to enter a query and retrieve results
+from across the site. Results are produced by the application&#8217;s providers,
+and may determine results in whatever manner they choose.</p>
+<p>Search providers may access an index for the entire site, or be
+application-specific. An institution may have a <a class="reference external" href="http://www.google.co.uk/enterprise/gsa/">Google Search Appliance</a> from which results are retrieved,
+or alternatively they may wish searches for ISBNs to go straight to a library
+catalogue page.</p>
+<p>To use, place the following in your <a class="reference external" href="../../topics/settings.html"><em>settings module</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">APPLICATIONS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c"># ...</span>
+    <span class="n">Application</span><span class="p">(</span><span class="s">&#39;molly.apps.search&#39;</span><span class="p">,</span> <span class="s">&#39;search&#39;</span><span class="p">,</span>
+        <span class="n">providers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s">&#39;...&#39;</span><span class="p">,</span>  <span class="c"># paths to search provider backends</span>
+        <span class="p">],</span>
+    <span class="p">),</span>
+    <span class="c"># ...</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="search-results">
+<h2>Search results<a class="headerlink" href="#search-results" title="Permalink to this headline">¶</a></h2>
+<p>Individual search results are represented as dictionaries where the following
+keys have particular meanings:</p>
+<dl class="docutils">
+<dt><tt class="xref docutils literal"><span class="pre">url</span></tt> (<em>required</em>)</dt>
+<dd>The local part of the URL for the page. Will be used as an <tt class="xref docutils literal"><span class="pre">href</span></tt>.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">title</span></tt> (<em>required</em>)</dt>
+<dd>The page title.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">application</span></tt> (<em>recommended</em>)</dt>
+<dd>The name of the application that handles the URL. May be used to display
+an icon next to each result.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">excerpt</span></tt></dt>
+<dd>The bit of the page relevant to the query. May contain HTML (i.e. should
+be marked safe in a template).</dd>
+<dt><tt class="xref docutils literal"><span class="pre">additional</span></tt></dt>
+<dd>More information about the resource represented at the URL. For example,
+the <tt class="xref docutils literal"><span class="pre">places</span></tt> application returns the type of entity and
+a distance from the user&#8217;s location.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">redirect_if_sole_result</span></tt></dt>
+<dd>A boolean, default <a title="(in Python v2.7)" class="reference external" href="http://docs.python.org/library/constants.html#False"><tt class="xref xref docutils literal"><span class="pre">False</span></tt></a>, which will cause the search page to
+redirect to the URL if only one result is returned.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">exclude_from_search</span></tt></dt>
+<dd>A boolean, default <a title="(in Python v2.7)" class="reference external" href="http://docs.python.org/library/constants.html#False"><tt class="xref xref docutils literal"><span class="pre">False</span></tt></a>, which will exclude the page from any
+displayed search results. Can be used to exclude irrelevant results or
+those not intended for mobile devices.</dd>
+</dl>
+<p>You may define any other keys as you see fit, though these won&#8217;t be utilised
+in the default templates, requiring you to implement your own. If you believe
+that there&#8217;s scope for more standardisation, please <tt class="xref docutils literal"><span class="pre">raise</span> <span class="pre">a</span> <span class="pre">ticket</span></tt> or <tt class="xref docutils literal"><span class="pre">start</span> <span class="pre">a</span> <span class="pre">discussion</span> <span class="pre">on</span> <span class="pre">the</span> <span class="pre">developer</span> <span class="pre">list</span></tt>.</p>
+</div>
+<div class="section" id="search-providers">
+<h2>Search providers<a class="headerlink" href="#search-providers" title="Permalink to this headline">¶</a></h2>
+<p>Providers should extend the
+<a title="molly.apps.search.molly.apps.search.providers.BaseSearchProvider" class="reference internal" href="#molly.apps.search.molly.apps.search.providers.BaseSearchProvider"><tt class="xref docutils literal"><span class="pre">BaseSearchProvider</span></tt></a> interface:</p>
+<dl class="class">
+<dt id="molly.apps.search.molly.apps.search.providers.BaseSearchProvider">
+<em class="property">class </em><tt class="descclassname">molly.apps.search.providers.</tt><tt class="descname">BaseSearchProvider</tt><a class="headerlink" href="#molly.apps.search.molly.apps.search.providers.BaseSearchProvider" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="molly.apps.search.molly.apps.search.providers.BaseSearchProvider.perform_search">
+<tt class="descname">perform_search</tt><big>(</big><em>self</em>, <em>request</em>, <em>query</em>, <em>application=None</em><big>)</big><a class="headerlink" href="#molly.apps.search.molly.apps.search.providers.BaseSearchProvider.perform_search" title="Permalink to this definition">¶</a></dt>
+<dd>Takes a <tt class="xref docutils literal"><span class="pre">django.http.HttpRequest</span></tt> object, a <a title="(in Python v2.7)" class="reference external" href="http://docs.python.org/library/functions.html#unicode"><tt class="xref docutils literal"><span class="pre">unicode</span></tt></a>
+query and an application name. This method should be overridden to
+return a list of results as defined above.</dd></dl>
+
+</dd></dl>
+
+<p><a title="molly.apps.search.molly.apps.search.providers.BaseSearchProvider" class="reference internal" href="#molly.apps.search.molly.apps.search.providers.BaseSearchProvider"><tt class="xref docutils literal"><span class="pre">BaseSearchProvider</span></tt></a> also provides the
+following utility methods you may find useful in your implementations:</p>
+<dl class="class">
+<dt>
+<em class="property">class </em><tt class="descclassname">molly.apps.search.providers.</tt><tt class="descname">BaseSearchProvider</tt></dt>
+<dd><dl class="method">
+<dt id="molly.apps.search.molly.apps.search.providers.BaseSearchProvider.get_metadata">
+<tt class="descname">get_metadata</tt><big>(</big><em>self</em>, <em>request</em>, <em>url</em><big>)</big><a class="headerlink" href="#molly.apps.search.molly.apps.search.providers.BaseSearchProvider.get_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resolves the given <tt class="xref docutils literal"><span class="pre">url</span></tt> to the view that would handle it and
+returns the result of calling
+<tt class="xref docutils literal"><span class="pre">get_metadata()</span></tt> on that view, passing
+it the <tt class="xref docutils literal"><span class="pre">request</span></tt>.</p>
+<p>May raise <tt class="xref docutils literal"><span class="pre">Resolver404</span></tt> or
+<tt class="xref docutils literal"><span class="pre">Http404</span></tt>. All other exceptions will be caught and
+logged.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="the-search-form">
+<h2>The search form<a class="headerlink" href="#the-search-form" title="Permalink to this headline">¶</a></h2>
+<p>Queries are processed through <a title="molly.apps.search.molly.apps.search.forms.SearchForm" class="reference internal" href="#molly.apps.search.molly.apps.search.forms.SearchForm"><tt class="xref docutils literal"><span class="pre">SearchForm</span></tt></a>:</p>
+<dl class="class">
+<dt id="molly.apps.search.molly.apps.search.forms.SearchForm">
+<em class="property">class </em><tt class="descclassname">molly.apps.search.forms.</tt><tt class="descname">SearchForm</tt><a class="headerlink" href="#molly.apps.search.molly.apps.search.forms.SearchForm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="molly.apps.search.molly.apps.search.forms.SearchForm.query">
+<tt class="descname">query</tt><a class="headerlink" href="#molly.apps.search.molly.apps.search.forms.SearchForm.query" title="Permalink to this definition">¶</a></dt>
+<dd>A <tt class="xref docutils literal"><span class="pre">CharField</span></tt> taking the search query.</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="defined-views">
+<h2>Defined views<a class="headerlink" href="#defined-views" title="Permalink to this headline">¶</a></h2>
+<p>This application defines just one view:</p>
+<dl class="class">
+<dt id="molly.apps.search.molly.apps.search.views.IndexView">
+<em class="property">class </em><tt class="descclassname">molly.apps.search.views.</tt><tt class="descname">IndexView</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#molly.apps.search.molly.apps.search.views.IndexView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Presents a single-field form to the user, and where a query has been
+submitted retrieves results from all configured search providers.</p>
+<p>Results from multiple providers are presented in the order they were
+configured, i.e. the topmost configured provider&#8217;s results are given
+precedence. Where more than one provider returns the same result, metadata
+are combined (with the location given by its first occurance) and only one
+result is displayed.</p>
+<p>This view renders to the <tt class="docutils literal"><span class="pre">search/index.html</span></tt> template, passing a
+<a title="molly.apps.search.molly.apps.search.forms.SearchForm" class="reference internal" href="#molly.apps.search.molly.apps.search.forms.SearchForm"><tt class="xref docutils literal"><span class="pre">SearchForm</span></tt></a> instance as <tt class="xref docutils literal"><span class="pre">form</span></tt> and
+(where a search has been performed) a list of results as <tt class="xref docutils literal"><span class="pre">results</span></tt>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="templates">
+<h2>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">search/base.html</span></tt></p>
+<blockquote>
+Extends <tt class="docutils literal"><span class="pre">base.html</span></tt>.</blockquote>
+<p><tt class="docutils literal"><span class="pre">search/index.html</span></tt></p>
+<blockquote>
+Extends <tt class="docutils literal"><span class="pre">search/base.html</span></tt> and renders the search form and results.
+The template presents results in an ordered list (<tt class="docutils literal"><span class="pre">&lt;ol&gt;</span></tt>), including
+<tt class="docutils literal"><span class="pre">search/result.html</span></tt> within a list item element (<tt class="docutils literal"><span class="pre">&lt;li&gt;</span></tt>) for each
+for each result in <tt class="xref docutils literal"><span class="pre">results</span></tt>.</blockquote>
+<p><tt class="docutils literal"><span class="pre">search/result.html</span></tt></p>
+<blockquote>
+By default, renders <tt class="docutils literal"><span class="pre">title</span></tt>, <tt class="docutils literal"><span class="pre">additional</span></tt> and <tt class="docutils literal"><span class="pre">excerpt</span></tt> inside a
+<tt class="docutils literal"><span class="pre">&lt;div</span> <span class="pre">class=&quot;search-result</span> <span class="pre">search-result-</span><em><span class="pre">appname</span></em><span class="pre">&quot;&gt;</span></tt>.</blockquote>
+</div>
+<div class="section" id="currently-implemented-providers">
+<h2>Currently implemented providers<a class="headerlink" href="#currently-implemented-providers" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><a title="molly.providers.apps.search.GSASearchProvider" class="reference external" href="../providers/search.html#molly.providers.apps.search.GSASearchProvider"><tt class="xref docutils literal"><span class="pre">molly.providers.apps.search.GSASearchProvider</span></tt></a></dt>
+<dd>Pulls results from a Google Search Appliance.</dd>
+<dt><tt class="xref docutils literal"><span class="pre">molly.providers.apps.search.ApplicationSearchProvider</span></tt></dt>
+<dd>For each installed application <tt class="docutils literal"><em><span class="pre">foo</span></em></tt>, calls
+<tt class="docutils literal"><em><span class="pre">foo</span></em><span class="pre">.search.perform_search</span></tt> and catenates the returned results.</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#"><tt class="docutils literal"><span class="pre">molly.apps.search</span></tt> &#8211; Whole site search</a><ul>
+<li><a class="reference external" href="#search-results">Search results</a></li>
+<li><a class="reference external" href="#search-providers">Search providers</a></li>
+<li><a class="reference external" href="#the-search-form">The search form</a></li>
+<li><a class="reference external" href="#defined-views">Defined views</a></li>
+<li><a class="reference external" href="#templates">Templates</a></li>
+<li><a class="reference external" href="#currently-implemented-providers">Currently implemented providers</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="contact.html"
+                                  title="previous chapter"><tt class="docutils literal docutils literal docutils literal"><span class="pre">molly.apps.contact</span></tt> &#8211; Contact search</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="service_status.html"
+                                  title="next chapter"><tt class="docutils literal"><span class="pre">molly.apps.service_status</span></tt> &#8211; Service status</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/ref/apps/search.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="service_status.html" title="molly.apps.service_status – Service status"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="contact.html" title="molly.apps.contact – Contact search"
+             >previous</a> |</li>
+        <li><a href="../../index.html">molly v0.3 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Provided applications</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Molly Project and contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.6.
+    </div>
+  </body>
+</html>
