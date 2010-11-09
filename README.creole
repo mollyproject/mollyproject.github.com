@@ -1,0 +1,4 @@
+= mollyproject.org =
+
+This repo holds the contents of what is displayed on mollyproject.org. It is hosted directly on github and changes to this repo will go live within minutes of a git push.
+
