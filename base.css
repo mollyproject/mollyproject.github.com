@@ -7,6 +7,9 @@ a { color: #373F7A;
 	text-decoration: none;}
 a:hover {text-decoration: underline;}
 
+ul li {
+	margin-bottom: 5px; 
+}
 #header {
 	background-color: #cfecef;
  	background: -moz-linear-gradient(bottom, #cfecef 0%, #fff 100%);
@@ -18,7 +21,7 @@ a:hover {text-decoration: underline;}
 	font-size: 6em;
 	font-weight: bold;
 	text-shadow: 2px 2px 7px #999;
-	margin-bottom: 10px;
+	margin-bottom: 0;
 }
 
 #header ul {list-style:none; 
